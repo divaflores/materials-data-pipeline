@@ -1,4 +1,6 @@
 venv/
+venv
+.venv/
 __pycache__/
 *.parquet
 config/pipeline_config.yaml
