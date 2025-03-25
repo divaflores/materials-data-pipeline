@@ -1,0 +1,17 @@
+# Rutas de archivos
+paths:
+  input_csv: "data/materials-2.csv"
+  raw_data_dir: "data/raw/"
+  processed_data_dir: "data/processed/"
+  quarantine_data_dir: "data/quarantine/"
+
+# Configuración general
+spark:
+  app_name: "MaterialsDataPipeline"
+  master: "local[*]"  # Esto puede cambiar a 'yarn' o cluster cuando escales
+
+# Opciones para la carga
+read_options:
+  header: true
+  inferSchema: false
+  delimiter: ","

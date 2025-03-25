@@ -1,0 +1,39 @@
+from pyspark.sql import SparkSession
+from pyspark.sql.types import *
+
+def create_spark_session(app_name="DataPipeline"):
+    return SparkSession.builder \
+        .appName(app_name) \
+        .getOrCreate()
+
+def get_schema():
+    return StructType([
+        StructField("id", DoubleType(), True),
+        StructField("name", StringType(), True),
+        StructField("description", StringType(), True),
+        StructField("long_description", StringType(), True),
+        StructField("customer_part_id", StringType(), True),
+        StructField("manufacturer_name", StringType(), True),
+        StructField("manufacturer_part_id", StringType(), True),
+        StructField("competitor_name", StringType(), True),
+        StructField("competitor_part_name", StringType(), True),
+        StructField("competitor_part_id", StringType(), True),
+        StructField("category", StringType(), True),
+        StructField("unit_of_measure", StringType(), True),
+        StructField("unit_quantity", DoubleType(), True),
+        StructField("requested_quantity", DoubleType(), True),
+        StructField("requested_unit_price", DoubleType(), True)
+    ])
+
+def read_materials_csv(spark, input_path):
+    schema = get_schema()
+    try:
+        df = spark.read.format("csv") \
+            .option("header", "true") \
+            .schema(schema) \
+            .load(input_path)
+        print("File loaded successfully.")
+        return df
+    except Exception as e:
+        print(f": {e}")
+        return None
