@@ -16,25 +16,26 @@ Build a robust pipeline that:
 - Is fully configurable via YAML
 - Handles invalid rows by sending them to a quarantine folder
 
+```bash
 data_pipeline/
-│
 ├── config/
-│ └── pipeline_config.yaml
+│   └── pipeline_config.yaml
 ├── data/
-│ ├── materials-2.csv
-│ ├── raw/
-│ ├── processed/
-│ └── quarantine/
+│   ├── materials-2.csv
+│   ├── raw/
+│   ├── processed/
+│   └── quarantine/
 ├── jobs/
-│ └── run_pipeline.py
+│   └── run_pipeline.py
 ├── src/
-│ ├── ingestion.py
-│ ├── cleaning.py
-│ ├── transformation.py
-│ ├── storage.py
-│ └── utils.py
+│   ├── ingestion.py
+│   ├── cleaning.py
+│   ├── transformation.py
+│   ├── storage.py
+│   └── utils.py
 ├── requirements.txt
-├── README.md
+└── README.md
+```
 
 ## Requirements
 
