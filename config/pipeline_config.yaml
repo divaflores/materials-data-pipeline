@@ -1,16 +1,16 @@
-# Rutas de archivos
+# Files path
 paths:
   input_csv: "data/materials-2.csv"
   raw_data_dir: "data/raw/"
   processed_data_dir: "data/processed/"
   quarantine_data_dir: "data/quarantine/"
 
-# Configuración general
+# General configurations
 spark:
   app_name: "MaterialsDataPipeline"
-  master: "local[*]"  # Esto puede cambiar a 'yarn' o cluster cuando escales
+  master: "local[*]"  # Change to yarn or cluster
 
-# Opciones para la carga
+# Loading options
 read_options:
   header: true
   inferSchema: false

@@ -33,8 +33,10 @@ data_pipeline/
 │   ├── transformation.py
 │   ├── storage.py
 │   └── utils.py
-├── requirements.txt
-└── README.md
+├── .gitignore
+├── Dockerfile
+├── README.md
+└── requirements.txt
 ```
 
 ## Requirements

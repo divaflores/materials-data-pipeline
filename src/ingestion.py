@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import *
+from pyspark.sql.types import DoubleType, StringType, StructType, StructField
 
 def create_spark_session(app_name="DataPipeline"):
     return SparkSession.builder \
@@ -8,7 +8,8 @@ def create_spark_session(app_name="DataPipeline"):
 
 def get_schema():
     return StructType([
-        StructField("id", DoubleType(), True),
+        StructField("Unnamed: 0", StringType(), True),
+        StructField("id", StringType(), True),
         StructField("name", StringType(), True),
         StructField("description", StringType(), True),
         StructField("long_description", StringType(), True),
