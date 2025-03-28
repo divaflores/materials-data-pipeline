@@ -5,7 +5,7 @@ os.environ["PYSPARK_PYTHON"] = "python"
 os.environ["PYSPARK_DRIVER_PYTHON"] = "python"
 from src.ingestion import create_spark_session, read_materials_csv
 from src.cleaning import clean_and_validate_data
-from src.transformation import category_aggregations, column_profiling
+from src.transformation import category_aggregations
 from src.storage import write_parquet
 from src.utils import load_config
 
