@@ -1,9 +1,13 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import DoubleType, StringType, StructType, StructField
+from src.utils import load_config
 
-def create_spark_session(app_name="DataPipeline"):
+def create_spark_session(app_name):
+    config = load_config()
     return SparkSession.builder \
         .appName(app_name) \
+        .master(config["spark"]["master"]) \
+        .config("spark.sql.debug.maxToStringFields", 1000) \
         .getOrCreate()
 
 def get_schema():
@@ -21,9 +25,9 @@ def get_schema():
         StructField("competitor_part_id", StringType(), True),
         StructField("category", StringType(), True),
         StructField("unit_of_measure", StringType(), True),
-        StructField("unit_quantity", DoubleType(), True),
-        StructField("requested_quantity", DoubleType(), True),
-        StructField("requested_unit_price", DoubleType(), True)
+        StructField("unit_quantity", StringType(), True),
+        StructField("requested_quantity", StringType(), True),
+        StructField("requested_unit_price", StringType(), True)
     ])
 
 def read_materials_csv(spark, input_path):
@@ -36,5 +40,5 @@ def read_materials_csv(spark, input_path):
         print("File loaded successfully.")
         return df
     except Exception as e:
-        print(f": {e}")
+        print(f"Ingestion process failed: {e}")
         return None

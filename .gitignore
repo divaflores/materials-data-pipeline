@@ -4,3 +4,6 @@ venv
 __pycache__/
 *.parquet
 config/pipeline_config.yaml
+data/processed/
+data/quarantine/
+data/raw/
