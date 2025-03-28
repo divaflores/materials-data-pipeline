@@ -8,6 +8,8 @@ def create_spark_session(app_name):
         .appName(app_name) \
         .master(config["spark"]["master"]) \
         .config("spark.sql.debug.maxToStringFields", 1000) \
+        .config("spark.ui.enabled", "false") \
+        .config("spark.eventLog.enabled", "false") \
         .getOrCreate()
 
 def get_schema():

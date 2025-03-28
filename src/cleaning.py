@@ -27,12 +27,15 @@ def clean_and_validate_data(df: DataFrame, quarantine_path: str) -> DataFrame:
             col("category").isNull()
         )
 
-        discarded_rows = only_nan_rows.union(only_null_rows).union(invalid_rows).distinct()
+        discarded_rows = only_nan_rows.union(only_null_rows)
+        discarded_rows = discarded_rows.union(invalid_rows).distinct()
+        discarded_rows = discarded_rows.repartition(1) 
 
         #  Save discarded rows in quarantine
-        if discarded_rows.count() > 0:
+        discarded_count = discarded_rows.count()
+        if discarded_count > 0:
             discarded_rows.write.mode("overwrite").parquet(quarantine_path)
-            print(f"{discarded_rows.count()} rows sent to quarantine.")
+            print(f"{discarded_count} rows sent to quarantine.")
         
         # Filter valid rows
         valid_rows = df.subtract(discarded_rows)

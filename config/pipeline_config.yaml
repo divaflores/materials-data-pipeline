@@ -8,7 +8,7 @@ paths:
 # General configurations
 spark:
   app_name: "MaterialsDataPipeline"
-  master: "local[*]"  # Change to yarn or cluster
+  master: "local[1]"  # Change to yarn or cluster
 
 # Loading options
 read_options:

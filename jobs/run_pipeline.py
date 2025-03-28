@@ -23,12 +23,27 @@ if __name__ == "__main__":
         # Ingestion
         df_raw = read_materials_csv(spark, input_path)
 
+        if df_raw is None:
+            print("Data reading failed. Aborting.")
+            spark.stop()
+            sys.exit(1)
+            
         # Cleansing and validation
         df_clean = clean_and_validate_data(df_raw, quarantine_path)
+
+        if df_clean is None:
+            print("Data cleaning failed. Aborting.")
+            spark.stop()
+            sys.exit(1)
 
         # Aggregations
         df_category_stats = category_aggregations(df_clean)
         #df_column_stats = column_profiling(df_clean)
+
+        if df_category_stats is None:
+            print("Data aggregation failed. Aborting.")
+            spark.stop()
+            sys.exit(1)
 
         # Storage
         write_parquet(df_category_stats, os.path.join(processed_path, "category_stats"))
@@ -39,5 +54,14 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error during pipeline execution: {e}")
     finally:
-        spark.stop()
-        print("Spark session stopped.")
+        try:
+            if spark:
+                #print("Stopping Spark...")
+                spark.stop()
+                #print("Spark stopped.")
+        except Exception as e:
+            print(f"Error stopping Spark: {e}")
+        finally:
+            import os
+            #print("Forced exit")
+            os._exit(0)  
