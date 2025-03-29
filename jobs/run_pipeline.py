@@ -3,7 +3,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 os.environ["PYSPARK_PYTHON"] = "python"
 os.environ["PYSPARK_DRIVER_PYTHON"] = "python"
-from src.ingestion import create_spark_session, read_materials_csv
+from src.ingestion import create_spark_session, read_materials
 from src.cleaning import clean_and_validate_data
 from src.transformation import category_aggregations
 from src.storage import write_parquet
@@ -17,11 +17,18 @@ if __name__ == "__main__":
     try:
         paths = config["paths"]
         input_path = paths["input_csv"]
+        raw_path = paths["raw_data_dir"]
         quarantine_path = paths["quarantine_data_dir"]
         processed_path = paths["processed_data_dir"]
 
+        header = config["read_options"]["header"]
+        multiline = config["read_options"]["multiline"]
+        escape = config["read_options"]["escape"]
+        quote = config["read_options"]["quote"]
+        file_format = config["read_options"]["file_format"]
+
         # Ingestion
-        df_raw = read_materials_csv(spark, input_path)
+        df_raw = read_materials(spark, input_path, file_format, header, quote, escape, multiline)
 
         if df_raw is None:
             print("Data reading failed. Aborting.")
@@ -29,12 +36,16 @@ if __name__ == "__main__":
             sys.exit(1)
             
         # Cleansing and validation
-        df_clean = clean_and_validate_data(df_raw, quarantine_path)
+        df_clean = clean_and_validate_data(df_raw, quarantine_path, 0.9)
 
         if df_clean is None:
             print("Data cleaning failed. Aborting.")
             spark.stop()
             sys.exit(1)
+        else:
+            clean_count = df_clean.count()
+            df_clean.write.mode("overwrite").parquet(raw_path)
+            print(f"{clean_count} cleaned rows sent to raw folder.")
 
         # Aggregations
         df_category_stats = category_aggregations(df_clean)

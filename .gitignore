@@ -7,3 +7,5 @@ config/pipeline_config.yaml
 data/processed/
 data/quarantine/
 data/raw/
+data/test
+test.ipynb

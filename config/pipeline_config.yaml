@@ -1,6 +1,7 @@
 # Files path
 paths:
   input_csv: "data/materials-2.csv"
+  input_json: "data/test.json"
   raw_data_dir: "data/raw/"
   processed_data_dir: "data/processed/"
   quarantine_data_dir: "data/quarantine/"
@@ -15,3 +16,7 @@ read_options:
   header: true
   inferSchema: false
   delimiter: ","
+  multiline: true
+  escape: '"'
+  quote: '"'
+  file_format: "csv"

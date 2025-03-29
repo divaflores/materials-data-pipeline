@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import DoubleType, StringType, StructType, StructField
+from pyspark.sql.types import StringType, StructType, StructField
 from src.utils import load_config
 
 def create_spark_session(app_name):
@@ -32,11 +32,14 @@ def get_schema():
         StructField("requested_unit_price", StringType(), True)
     ])
 
-def read_materials_csv(spark, input_path):
+def read_materials(spark, input_path, file_format, header, quote, escape, multiline):
     schema = get_schema()
     try:
-        df = spark.read.format("csv") \
-            .option("header", "true") \
+        df = spark.read.format(file_format) \
+            .option("header", header) \
+            .option("quote", quote) \
+            .option("escape", escape) \
+            .option("multiline", multiline) \
             .schema(schema) \
             .load(input_path)
         print("File loaded successfully.")

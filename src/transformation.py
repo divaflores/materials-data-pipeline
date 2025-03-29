@@ -5,11 +5,11 @@ from pyspark.sql.functions import (
 
 def category_aggregations(df: DataFrame) -> DataFrame:
     try:
-        return df.groupBy("category").agg(
+        return df.groupBy("category_cleaned").agg(
             count("*").alias("item_count"),
-            round(avg("requested_unit_price"), 2).alias("avg_price"),
-            round(min("requested_unit_price"), 2).alias("min_price"),
-            round(max("requested_unit_price"), 2).alias("max_price")
+            round(avg("requested_unit_price_cleaned"), 2).alias("avg_price"),
+            round(min("requested_unit_price_cleaned"), 2).alias("min_price"),
+            round(max("requested_unit_price_cleaned"), 2).alias("max_price")
         )
     except Exception as e:
         print(f"Category aggregation failed: {e}")
