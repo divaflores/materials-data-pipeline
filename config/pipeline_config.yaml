@@ -1,7 +1,8 @@
 # Files path
 paths:
   input_file: "data/materials-2.csv"
-  error_report_path: "data/schema_report.json"
+  schema_report_path: "data/"
+  cleaning_log_path: "data/"
   raw_data_dir: "data/raw/"
   processed_data_dir: "data/processed/"
   quarantine_data_dir: "data/quarantine/"
@@ -19,4 +20,9 @@ read_options:
   multiline: true
   escape: '"'
   quote: '"'
-  file_format: "csv"
+  read_file_format: "csv"
+
+# Writing options
+write_options:
+  write_file_format: "parquet"
+  mode: "overwrite"

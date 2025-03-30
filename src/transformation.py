@@ -1,7 +1,5 @@
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import (
-    col, count, avg, min, max, countDistinct, when, lit, isnan, round
-)
+from pyspark.sql.functions import col, count, avg, min, max, countDistinct, when, isnan, round
 
 def category_aggregations(df: DataFrame) -> DataFrame:
     try:
@@ -17,20 +15,56 @@ def category_aggregations(df: DataFrame) -> DataFrame:
 
 def column_profiling(df: DataFrame) -> DataFrame:
     try:
-        # Recolectamos métricas por columna
+        total_rows = df.count()
+
+        # Build agg expressions
+        agg_exprs = []
+        for c in df.columns:
+            agg_exprs += [
+                count(when(col(c).isNull() | isnan(col(c)), c)).alias(f"{c}_nulls"),
+                countDistinct(col(c)).alias(f"{c}_unique"),
+                min(col(c)).alias(f"{c}_min"),
+                max(col(c)).alias(f"{c}_max")
+            ]
+
+        # Aggregate
+        agg_row = df.agg(*agg_exprs).first().asDict()
+
         stats = []
-        for col_name in df.columns:
-            col_stats = df.select(
-                lit(col_name).alias("column"),
-                count(when(col(col_name).isNull() | isnan(col(col_name)), col_name)).alias("null_count"),
-                countDistinct(col_name).alias("unique_count"),
-                min(col_name).alias("min"),
-                max(col_name).alias("max")
-            ).collect()[0]
-            stats.append(col_stats.asDict())
-        
-        # Convertimos a un nuevo DataFrame
+        for field in df.schema.fields:
+            col_name = field.name
+            data_type = str(field.dataType)
+            null_count = agg_row.get(f"{col_name}_nulls", 0)
+            unique_count = agg_row.get(f"{col_name}_unique", None)
+            min_val = agg_row.get(f"{col_name}_min", None)
+            max_val = agg_row.get(f"{col_name}_max", None)
+            null_percent = round((null_count / total_rows) * 100, 2) if total_rows > 0 else None
+
+            try:
+                moda_row = (
+                    df.groupBy(col_name)
+                    .count()
+                    .orderBy(col("count").desc())
+                    .filter(col(col_name).isNotNull())
+                    .first()
+                )
+                mode_val = moda_row[col_name] if moda_row else None
+            except:
+                mode_val = None
+                
+            stats.append({
+                "column": col_name,
+                "data_type": data_type,
+                "null_count": null_count,
+                "null_percent": null_percent,
+                "unique_count": unique_count,
+                "min": min_val,
+                "max": max_val,
+                "mode": mode_val
+            })
+
         return df.sparkSession.createDataFrame(stats)
+
     except Exception as e:
         print(f"Column profiling failed: {e}")
         return None

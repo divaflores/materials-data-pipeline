@@ -6,7 +6,7 @@ os.environ["PYSPARK_DRIVER_PYTHON"] = "python"
 from src.ingestion import create_spark_session, read_materials
 from src.cleaning import clean_and_validate_data
 from src.transformation import category_aggregations
-from src.storage import write_parquet
+from src.storage import write_data
 from src.utils import load_config
 
 
@@ -22,17 +22,20 @@ if __name__ == "__main__":
         processed_path = paths["processed_data_dir"]
 
         read_opts = config.get("read_options", {})
-
         header = read_opts.get("header", True)
         infer_schema = read_opts.get("infer_schema", False)
         delimiter = read_opts.get("delimiter", ",")
         multiline = read_opts.get("multiline", False)
         escape = read_opts.get("escape", '"')
         quote = read_opts.get("quote", '"')
-        file_format = read_opts.get("file_format", "csv")
+        read_file_format = read_opts.get("read_file_format", "csv")
+
+        write_opts = config.get("write_options", {})
+        write_file_format = write_opts.get("write_file_format", "parquet")
+        mode = write_opts.get("mode", "overwrite")
 
         # Ingestion
-        df_raw = read_materials(spark, input_path, header, quote, escape, multiline, infer_schema, file_format)
+        df_raw = read_materials(spark, input_path, header, quote, escape, multiline, infer_schema, read_file_format)
 
         if df_raw is None:
             print("Data reading failed. Aborting.")
@@ -48,7 +51,7 @@ if __name__ == "__main__":
             sys.exit(1)
         else:
             clean_count = df_clean.count()
-            df_clean.write.mode("overwrite").parquet(raw_path)
+            write_data(df_clean, raw_path, write_file_format, mode)
             print(f"{clean_count} cleaned rows sent to raw folder.")
 
         # Aggregations
@@ -61,7 +64,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
         # Storage
-        write_parquet(df_category_stats, os.path.join(processed_path, "category_stats"))
+        write_data(df_category_stats, os.path.join(processed_path, "category_stats"), write_file_format, mode)
         #write_parquet(df_column_stats, os.path.join(processed_path, "column_profile"))
 
     except KeyboardInterrupt:

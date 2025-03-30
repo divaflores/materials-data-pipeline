@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StringType, StructType, StructField
 import json
+from datetime import datetime
 from src.utils import load_config
 
 def create_spark_session(app_name):
@@ -41,7 +42,8 @@ def validate_schema(df, expected_schema: StructType, report_path: str = None) ->
         "type_mismatches": [],
         "unexpected_columns": [],
         "actual_schema": df.schema.jsonValue(),
-        "expected_schema": expected_schema.jsonValue()
+        "expected_schema": expected_schema.jsonValue(),
+        "timestamp": datetime.now().isoformat()
     }
 
     df_fields = {field.name: field.dataType for field in df.schema.fields}
@@ -78,8 +80,10 @@ def validate_schema(df, expected_schema: StructType, report_path: str = None) ->
         print("Schema validation passed.")
 
     # Save JSON file if path is specified
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_name = f"schema_validation_report_{timestamp}.json"
     if report_path:
-        with open(report_path, "w") as f:
+        with open(f"{report_path}/{file_name}", "w") as f:
             json.dump(report, f, indent=4)
         print(f"Validation report saved to: {report_path}")
 
@@ -89,13 +93,13 @@ def read_materials(spark, input_path, header, quote, escape, multiline, infer_sc
     config = load_config()
     expected_schema = get_schema() if not infer_schema else None
     try:
-        error_report_path = config["paths"]["error_report_path"]
+        schema_report_path = config["paths"]["schema_report_path"]
 
         prev_df = spark.read.format(file_format) \
             .option("header", header) \
             .load(input_path)
 
-        is_valid = validate_schema(prev_df, expected_schema, report_path=error_report_path)
+        is_valid = validate_schema(prev_df, expected_schema, report_path=schema_report_path)
 
         df = spark.read.format(file_format) \
             .option("header", header) \

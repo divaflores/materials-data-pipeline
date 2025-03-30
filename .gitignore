@@ -11,5 +11,6 @@ data/test
 data/materials.json
 data/test_schema.csv
 data/test_schema2.csv
-data/schema_report.json
+data/schema_validation_report*
+data/cleaning_log*
 test.ipynb
