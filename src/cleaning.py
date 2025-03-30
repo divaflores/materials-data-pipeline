@@ -4,12 +4,12 @@ from pyspark.sql import DataFrame
 from functools import reduce
 import json
 from datetime import datetime
-from src.utils import load_config
+from src.utils import load_config_with_overrides
 from src.storage import write_data
 
 def clean_and_validate_data(df: DataFrame, quarantine_path: str, null_threshold: float, include_metadata: bool = False) -> DataFrame:
     try:
-        config = load_config()
+        config, args = load_config_with_overrides()
         cleaning_log_path = config["paths"]["cleaning_log_path"]
         mode = config["write_options"]["mode"]
         write_file_format = config["write_options"]["write_file_format"]

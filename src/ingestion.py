@@ -2,17 +2,21 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import StringType, StructType, StructField
 import json
 from datetime import datetime
-from src.utils import load_config
+from src.utils import load_config_with_overrides
 
-def create_spark_session(app_name):
-    config = load_config()
-    return SparkSession.builder \
-        .appName(app_name) \
-        .master(config["spark"]["master"]) \
-        .config("spark.sql.debug.maxToStringFields", 1000) \
-        .config("spark.ui.enabled", "false") \
-        .config("spark.eventLog.enabled", "false") \
-        .getOrCreate()
+def create_spark_session(app_name: str, master: str = None) -> SparkSession:
+    builder = SparkSession.builder.appName(app_name)
+
+    if master:
+        builder = builder.master(master)
+
+        builder = builder.config("spark.sql.shuffle.partitions", 4) \
+                        .config("spark.sql.adaptive.enabled", True) \
+                        .config("spark.sql.debug.maxToStringFields", 1000) \
+                        .config("spark.ui.enabled", "false") \
+                        .config("spark.eventLog.enabled", "false")
+        
+        return builder.getOrCreate()
 
 def get_schema():
     return StructType([
@@ -90,7 +94,7 @@ def validate_schema(df, expected_schema: StructType, report_path: str = None) ->
     return report["status"] == "PASSED"
 
 def read_materials(spark, input_path, header, quote, escape, multiline, infer_schema, file_format):
-    config = load_config()
+    config, args = load_config_with_overrides()
     expected_schema = get_schema() if not infer_schema else None
     try:
         schema_report_path = config["paths"]["schema_report_path"]

@@ -7,14 +7,20 @@ from src.ingestion import create_spark_session, read_materials
 from src.cleaning import clean_and_validate_data
 from src.transformation import category_aggregations
 from src.storage import write_data
-from src.utils import load_config
-
+from src.utils import load_or_checkpoint, load_config_with_overrides
 
 if __name__ == "__main__":
-    config = load_config()
-    spark = create_spark_session(config["spark"]["app_name"])
+
+    config, args = load_config_with_overrides()
+
+    app_name = config["spark"]["app_name"]
+    master = config["spark"].get("master")  # could be None
+
+    spark = create_spark_session(app_name, master)
 
     try:
+        spark.sparkContext.setCheckpointDir("data/checkpoints")
+
         paths = config["paths"]
         input_path = paths["input_file"]
         raw_path = paths["raw_data_dir"]
@@ -44,6 +50,10 @@ if __name__ == "__main__":
             
         # Cleansing and validation
         df_clean = clean_and_validate_data(df_raw, quarantine_path, 0.9)
+
+        # Checkpoint: solo se ejecuta si no existe
+        if df_clean is not None and config["checkpointing"].get("use_checkpoint", False):
+            df_clean = load_or_checkpoint(df_clean, config["checkpointing"]["checkpoint_path"])
 
         if df_clean is None:
             print("Data cleaning failed. Aborting.")

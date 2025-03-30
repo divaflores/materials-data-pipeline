@@ -1,8 +1,8 @@
 # Files path
 paths:
   input_file: "data/materials-2.csv"
-  schema_report_path: "data/"
-  cleaning_log_path: "data/"
+  schema_report_path: "data/logs"
+  cleaning_log_path: "data/logs"
   raw_data_dir: "data/raw/"
   processed_data_dir: "data/processed/"
   quarantine_data_dir: "data/quarantine/"
@@ -26,3 +26,8 @@ read_options:
 write_options:
   write_file_format: "parquet"
   mode: "overwrite"
+
+# Checkpoint
+checkpointing:
+  use_checkpoint: false
+  checkpoint_path: "data/checkpoints/df_clean"

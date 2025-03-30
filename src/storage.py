@@ -1,6 +1,5 @@
 import os
 from pyspark.sql import DataFrame
-from src.utils import load_config
 
 def write_data(df: DataFrame, 
                output_path: str, 
