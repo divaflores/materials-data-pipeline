@@ -16,19 +16,23 @@ if __name__ == "__main__":
 
     try:
         paths = config["paths"]
-        input_path = paths["input_csv"]
+        input_path = paths["input_file"]
         raw_path = paths["raw_data_dir"]
         quarantine_path = paths["quarantine_data_dir"]
         processed_path = paths["processed_data_dir"]
 
-        header = config["read_options"]["header"]
-        multiline = config["read_options"]["multiline"]
-        escape = config["read_options"]["escape"]
-        quote = config["read_options"]["quote"]
-        file_format = config["read_options"]["file_format"]
+        read_opts = config.get("read_options", {})
+
+        header = read_opts.get("header", True)
+        infer_schema = read_opts.get("infer_schema", False)
+        delimiter = read_opts.get("delimiter", ",")
+        multiline = read_opts.get("multiline", False)
+        escape = read_opts.get("escape", '"')
+        quote = read_opts.get("quote", '"')
+        file_format = read_opts.get("file_format", "csv")
 
         # Ingestion
-        df_raw = read_materials(spark, input_path, file_format, header, quote, escape, multiline)
+        df_raw = read_materials(spark, input_path, header, quote, escape, multiline, infer_schema, file_format)
 
         if df_raw is None:
             print("Data reading failed. Aborting.")

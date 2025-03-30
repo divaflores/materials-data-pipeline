@@ -8,4 +8,8 @@ data/processed/
 data/quarantine/
 data/raw/
 data/test
+data/materials.json
+data/test_schema.csv
+data/test_schema2.csv
+data/schema_report.json
 test.ipynb
