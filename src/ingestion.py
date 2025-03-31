@@ -2,9 +2,13 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import StringType, StructType, StructField
 import json
 from datetime import datetime
-from src.utils import load_config_with_overrides
+from src.utils import load_config_with_overrides, setup_logger
 
 def create_spark_session(app_name: str, master: str = None) -> SparkSession:
+    config, args = load_config_with_overrides()
+    logger = setup_logger(config["logs"]["log_name"], config["logs"]["log_file"])
+
+    logger.info(f"Creating Spark session: {app_name}")
     builder = SparkSession.builder.appName(app_name)
 
     if master:
@@ -39,6 +43,10 @@ def get_schema():
     ])
 
 def validate_schema(df, expected_schema: StructType, report_path: str = None) -> bool:
+
+    config, args = load_config_with_overrides()
+    logger = setup_logger(config["logs"]["log_name"], config["logs"]["log_file"])
+
     report = {
         "status": "PASSED",
         "errors": [],
@@ -77,11 +85,11 @@ def validate_schema(df, expected_schema: StructType, report_path: str = None) ->
 
     if report["errors"]:
         report["status"] = "FAILED"
-        print("Schema validation failed:")
+        logger.exception("Schema validation failed.")
         for err in report["errors"]:
             print("   -", err)
     else:
-        print("Schema validation passed.")
+        logger.info("Schema validation passed.")
 
     # Save JSON file if path is specified
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -89,13 +97,16 @@ def validate_schema(df, expected_schema: StructType, report_path: str = None) ->
     if report_path:
         with open(f"{report_path}/{file_name}", "w") as f:
             json.dump(report, f, indent=4)
-        print(f"Validation report saved to: {report_path}")
+        logger.info(f"Validation report saved to: {report_path}")
+
 
     return report["status"] == "PASSED"
 
 def read_materials(spark, input_path, header, quote, escape, multiline, infer_schema, file_format):
     config, args = load_config_with_overrides()
+    logger = setup_logger(config["logs"]["log_name"], config["logs"]["log_file"])
     expected_schema = get_schema() if not infer_schema else None
+    
     try:
         schema_report_path = config["paths"]["schema_report_path"]
 
@@ -117,12 +128,14 @@ def read_materials(spark, input_path, header, quote, escape, multiline, infer_sc
             if is_valid:
                 df = df.schema(expected_schema)
             else: 
+                logger.exception("Schema validation failed. See report for details.")
                 raise ValueError("Schema validation failed. See report for details.")
             
-        df = df.load(input_path)        
-        print("File loaded successfully.")
+        df = df.load(input_path)   
+        logger.info(f"Data read successfully from {input_path}. Row count: {df.count()}")     
+
         return df
     
     except Exception as e:
-        print(f"Ingestion process failed: {e}")
+        logger.exception(f"Ingestion process failed: {e}")
         return None

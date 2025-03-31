@@ -31,3 +31,8 @@ write_options:
 checkpointing:
   use_checkpoint: false
   checkpoint_path: "data/checkpoints/df_clean"
+
+# Logs
+logs:
+  log_name: "pipeline_log"
+  log_file: "data/logs/pipeline.log"

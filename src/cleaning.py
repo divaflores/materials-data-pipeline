@@ -4,12 +4,16 @@ from pyspark.sql import DataFrame
 from functools import reduce
 import json
 from datetime import datetime
-from src.utils import load_config_with_overrides
+from src.utils import load_config_with_overrides, setup_logger
 from src.storage import write_data
 
 def clean_and_validate_data(df: DataFrame, quarantine_path: str, null_threshold: float, include_metadata: bool = False) -> DataFrame:
     try:
         config, args = load_config_with_overrides()
+
+        logger = setup_logger(config["logs"]["log_name"], config["logs"]["log_file"])
+        logger.info("Starting data cleaning and validation...")
+
         cleaning_log_path = config["paths"]["cleaning_log_path"]
         mode = config["write_options"]["mode"]
         write_file_format = config["write_options"]["write_file_format"]
@@ -54,7 +58,7 @@ def clean_and_validate_data(df: DataFrame, quarantine_path: str, null_threshold:
         if discarded_count > 0:
             columns_to_keep = [c for c in df.columns if not c.endswith("_cleaned")]
             write_data(discarded_rows.select(*columns_to_keep), quarantine_path, write_file_format, mode)
-            print(f"{discarded_count} invalid rows sent to quarantine.")
+            logger.info(f"{discarded_count} invalid rows sent to quarantine.")
         
         discarded_rows.unpersist()
 
@@ -80,7 +84,7 @@ def clean_and_validate_data(df: DataFrame, quarantine_path: str, null_threshold:
         # Drop columns with lost of nulls
         valid_count = valid_rows.count()
         if valid_count == 0:
-            print("No valid rows after cleansing")
+            logger.info("No valid rows after cleansing")
             return None
 
         null_counts = valid_rows.select([
@@ -110,10 +114,11 @@ def clean_and_validate_data(df: DataFrame, quarantine_path: str, null_threshold:
         file_name = f"cleaning_log_{timestamp}.json"
         with open(f"{cleaning_log_path}/{file_name}", "w") as f:
             json.dump(summary, f, indent=4)
-        print(f"Cleaning summary saved to: {cleaning_log_path}")
 
+        logger.info(f"Cleaning summary saved to: {cleaning_log_path}")
+        logger.info(f"Data cleaned. Final row count: {df_clean.count()}")
         return df_clean
     
     except Exception as e:
-        print(f"Cleaning process failed: {e}")
+        logger.exception(f"Cleaning process failed: {e}")
         return None

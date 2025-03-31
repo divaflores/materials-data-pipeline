@@ -1,8 +1,12 @@
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, avg, min, max, countDistinct, when, isnan, round
+from src.utils import setup_logger, load_config_with_overrides
 
 def category_aggregations(df: DataFrame) -> DataFrame:
     try:
+        config, _ = load_config_with_overrides()
+        logger = setup_logger(config["logs"]["log_name"], config["logs"]["log_file"])
+
         return df.groupBy("category_cleaned").agg(
             count("*").alias("item_count"),
             round(avg("requested_unit_price_cleaned"), 2).alias("avg_price"),
@@ -10,11 +14,14 @@ def category_aggregations(df: DataFrame) -> DataFrame:
             round(max("requested_unit_price_cleaned"), 2).alias("max_price")
         )
     except Exception as e:
-        print(f"Category aggregation failed: {e}")
+        logger.exception(f"Category aggregation failed: {e}")
         return None
 
 def column_profiling(df: DataFrame) -> DataFrame:
     try:
+        config, _ = load_config_with_overrides()
+        logger = setup_logger(config["logs"]["log_name"], config["logs"]["log_file"])
+
         total_rows = df.count()
 
         # Build agg expressions
@@ -66,5 +73,5 @@ def column_profiling(df: DataFrame) -> DataFrame:
         return df.sparkSession.createDataFrame(stats)
 
     except Exception as e:
-        print(f"Column profiling failed: {e}")
+        logger.exception(f"Column profiling failed: {e}")
         return None

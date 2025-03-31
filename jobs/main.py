@@ -7,18 +7,23 @@ from src.ingestion import create_spark_session, read_materials
 from src.cleaning import clean_and_validate_data
 from src.transformation import category_aggregations
 from src.storage import write_data
-from src.utils import load_or_checkpoint, load_config_with_overrides
+from src.utils import load_or_checkpoint, load_config_with_overrides, setup_logger
+from time import time
 
 if __name__ == "__main__":
-
-    config, args = load_config_with_overrides()
-
-    app_name = config["spark"]["app_name"]
-    master = config["spark"].get("master")  # could be None
-
-    spark = create_spark_session(app_name, master)
+    start_pipeline = time()
 
     try:
+        config, args = load_config_with_overrides()
+        logger = setup_logger(config["logs"]["log_name"], config["logs"]["log_file"])
+        logger.info("-------------------------Pipeline started-------------------------")
+        
+        app_name = config["spark"]["app_name"]
+        master = config["spark"].get("master")  # could be None
+
+        spark = create_spark_session(app_name, master)
+        logger.info("Spark session created.")
+
         spark.sparkContext.setCheckpointDir("data/checkpoints")
 
         paths = config["paths"]
@@ -44,9 +49,10 @@ if __name__ == "__main__":
         df_raw = read_materials(spark, input_path, header, quote, escape, multiline, infer_schema, read_file_format)
 
         if df_raw is None:
-            print("Data reading failed. Aborting.")
+            logger.error("Failed to read input data.")
             spark.stop()
             sys.exit(1)
+        logger.info(f"Input data loaded: {df_raw.count()} rows.")
             
         # Cleansing and validation
         df_clean = clean_and_validate_data(df_raw, quarantine_path, 0.9)
@@ -54,42 +60,43 @@ if __name__ == "__main__":
         # Checkpoint: solo se ejecuta si no existe
         if df_clean is not None and config["checkpointing"].get("use_checkpoint", False):
             df_clean = load_or_checkpoint(df_clean, config["checkpointing"]["checkpoint_path"])
+            logger.info("Checkpoint loaded or created.")
 
         if df_clean is None:
-            print("Data cleaning failed. Aborting.")
+            logger.error("Data cleaning failed.")
             spark.stop()
             sys.exit(1)
         else:
             clean_count = df_clean.count()
             write_data(df_clean, raw_path, write_file_format, mode)
-            print(f"{clean_count} cleaned rows sent to raw folder.")
+            logger.info(f"Data cleaned: {df_clean.count()} rows.")
 
         # Aggregations
         df_category_stats = category_aggregations(df_clean)
         #df_column_stats = column_profiling(df_clean)
 
         if df_category_stats is None:
-            print("Data aggregation failed. Aborting.")
+            logger.error("Aggregation failed.")
             spark.stop()
             sys.exit(1)
+        logger.info("Category stats calculated.")
 
         # Storage
         write_data(df_category_stats, os.path.join(processed_path, "category_stats"), write_file_format, mode)
         #write_parquet(df_column_stats, os.path.join(processed_path, "column_profile"))
 
     except KeyboardInterrupt:
-        print("\nPipeline interrupted by user. Cleaning up...")
+        logger.exception("Pipeline interrupted by user.")
     except Exception as e:
-        print(f"Error during pipeline execution: {e}")
+        logger.exception(f"Error during pipeline execution: {e}")
     finally:
         try:
             if spark:
-                #print("Stopping Spark...")
                 spark.stop()
-                #print("Spark stopped.")
+                logger.info(f"Spark stopped.")
         except Exception as e:
-            print(f"Error stopping Spark: {e}")
+            logger.exception(f"Error stopping Spark: {e}")
         finally:
             import os
-            #print("Forced exit")
+            logger.info(f"----------------Pipeline finished in {round(time() - start_pipeline, 2)} seconds----------------")
             os._exit(0)  
