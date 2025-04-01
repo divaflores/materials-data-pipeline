@@ -67,3 +67,12 @@ def setup_logger(name: str, log_file: str = None, level=logging.INFO):
             logger.addHandler(file_handler)
 
     return logger
+
+
+def write_to_postgres(df, table_name, jdbc_url, properties, mode="overwrite"):
+    df.write.jdbc(
+        url=jdbc_url,
+        table=table_name,
+        mode=mode,
+        properties=properties
+    )

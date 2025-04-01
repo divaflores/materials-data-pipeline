@@ -5,9 +5,9 @@ os.environ["PYSPARK_PYTHON"] = "python"
 os.environ["PYSPARK_DRIVER_PYTHON"] = "python"
 from src.ingestion import create_spark_session, read_materials
 from src.cleaning import clean_and_validate_data
-from src.transformation import category_aggregations
+from src.transformation import aggregations
 from src.storage import write_data
-from src.utils import load_or_checkpoint, load_config_with_overrides, setup_logger
+from src.utils import load_or_checkpoint, load_config_with_overrides, setup_logger, write_to_postgres
 from time import time
 
 if __name__ == "__main__":
@@ -16,6 +16,9 @@ if __name__ == "__main__":
     try:
         config, args = load_config_with_overrides()
         logger = setup_logger(config["logs"]["log_name"], config["logs"]["log_file"])
+        pg_conf = config["postgres"]
+        jdbc_url = f"jdbc:postgresql://{pg_conf['host']}:{pg_conf['port']}/{pg_conf['dbname']}"
+
         logger.info("-------------------------Pipeline started-------------------------")
         
         app_name = config["spark"]["app_name"]
@@ -68,22 +71,35 @@ if __name__ == "__main__":
             sys.exit(1)
         else:
             clean_count = df_clean.count()
-            write_data(df_clean, raw_path, write_file_format, mode)
-            logger.info(f"Data cleaned: {df_clean.count()} rows.")
+            write_data(df_clean, raw_path, write_file_format, mode)     
+            # Write to PosgreSQL                  
+            # write_to_postgres(
+            #     df_clean,
+            #     table_name=pg_conf["table"],
+            #     jdbc_url=jdbc_url,
+            #     properties={
+            #         "user": pg_conf["user"],
+            #         "password": pg_conf["password"],
+            #         "driver": "org.postgresql.Driver"
+            #     }
+            # )
+            #logger.info(f"Data store in PosgreSQL database.")
+            logger.info(f"Data cleaned: {df_clean.count()} rows.")            
 
         # Aggregations
-        df_category_stats = category_aggregations(df_clean)
-        #df_column_stats = column_profiling(df_clean)
+        df_aggregations = aggregations(df_clean)
 
-        if df_category_stats is None:
+        if df_aggregations is None:
             logger.error("Aggregation failed.")
             spark.stop()
             sys.exit(1)
-        logger.info("Category stats calculated.")
-
-        # Storage
-        write_data(df_category_stats, os.path.join(processed_path, "category_stats"), write_file_format, mode)
-        #write_parquet(df_column_stats, os.path.join(processed_path, "column_profile"))
+        else:
+            logger.info("Category stats calculated.")
+            write_data(df = df_aggregations, 
+                output_path = os.path.join(processed_path, "stats"), 
+                file_format = write_file_format, 
+                mode = mode,
+                partition_by = "category_cleaned")
 
     except KeyboardInterrupt:
         logger.exception("Pipeline interrupted by user.")

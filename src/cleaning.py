@@ -1,4 +1,4 @@
-from pyspark.sql.functions import col, trim, regexp_replace, when, initcap, count, lit
+from pyspark.sql.functions import col, trim, regexp_replace, when, initcap, count, lit, current_timestamp
 from pyspark.sql.types import IntegerType, DoubleType
 from pyspark.sql import DataFrame
 from functools import reduce
@@ -100,6 +100,7 @@ def clean_and_validate_data(df: DataFrame, quarantine_path: str, null_threshold:
             col_to_keep = [c for c in col_to_keep if c != "is_valid"]
 
         df_clean = valid_rows.select(col_to_keep)
+        df_clean = df_clean.withColumn("ingestion_time", current_timestamp())
 
         summary = {
             "total_rows": total_count,

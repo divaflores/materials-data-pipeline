@@ -11,6 +11,7 @@ paths:
 spark:
   app_name: "MaterialsDataPipeline"
   master: "local[1]"  # Change to yarn or cluster
+  jdbc_jar_path: "jars/postgresql-42.7.2.jar"
 
 # Loading options
 read_options:
@@ -36,3 +37,11 @@ checkpointing:
 logs:
   log_name: "pipeline_log"
   log_file: "data/logs/pipeline.log"
+
+postgres:
+  host: localhost
+  port: 5432
+  dbname: materials_db
+  user: postgres
+  password: mypassword
+  table: materials

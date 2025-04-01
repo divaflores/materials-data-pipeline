@@ -1,3 +1,5 @@
+import os
+import tempfile
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StringType, StructType, StructField
 import json
@@ -7,20 +9,27 @@ from src.utils import load_config_with_overrides, setup_logger
 def create_spark_session(app_name: str, master: str = None) -> SparkSession:
     config, args = load_config_with_overrides()
     logger = setup_logger(config["logs"]["log_name"], config["logs"]["log_file"])
-
     logger.info(f"Creating Spark session: {app_name}")
+
     builder = SparkSession.builder.appName(app_name)
 
     if master:
         builder = builder.master(master)
 
-        builder = builder.config("spark.sql.shuffle.partitions", 4) \
-                        .config("spark.sql.adaptive.enabled", True) \
-                        .config("spark.sql.debug.maxToStringFields", 1000) \
-                        .config("spark.ui.enabled", "false") \
-                        .config("spark.eventLog.enabled", "false")
+    # Copy to PosgreSQL
+    # spark_temp_dir = os.path.join(tempfile.gettempdir(), "spark_temp_dir")
+    # os.makedirs(spark_temp_dir, exist_ok=True)
+
+    # builder = builder.config("spark.jars", config["spark"]["jdbc_jar_path"]) \
+    #                 .config("spark.local.dir", spark_temp_dir)
+                    
+    builder = builder.config("spark.sql.shuffle.partitions", 4) \
+                    .config("spark.sql.adaptive.enabled", True) \
+                    .config("spark.sql.debug.maxToStringFields", 1000) \
+                    .config("spark.ui.enabled", "false") \
+                    .config("spark.eventLog.enabled", "false")
         
-        return builder.getOrCreate()
+    return builder.getOrCreate()
 
 def get_schema():
     return StructType([

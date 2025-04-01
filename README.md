@@ -19,19 +19,21 @@ Build a robust pipeline that:
 ```bash
 data_pipeline/
 ├── config/
-│   └── pipeline_config.yaml
+│   └── config.yaml
 ├── data/
 │   ├── materials-2.csv
-│   ├── raw/
+│   ├── checkpoints/
+│   ├── logs/
 │   ├── processed/
 │   └── quarantine/
+│   ├── raw/
 ├── jobs/
-│   └── run_pipeline.py
+│   └── main.py
 ├── src/
-│   ├── ingestion.py
 │   ├── cleaning.py
-│   ├── transformation.py
+│   ├── ingestion.py
 │   ├── storage.py
+│   ├── transformation.py
 │   └── utils.py
 ├── .gitignore
 ├── Dockerfile
@@ -66,13 +68,11 @@ This will execute all stages of the pipeline:
 
     Category-wise (item count, average/min/max price)
 
-    Column-wise profiling (nulls, uniques, most frequent, etc.)
-
-5. Stores results in data/processed/ as partitioned Parquet files
+5. Stores results in data/processed/ as partitioned/non-partitioned Parquet files
 
 ## Dynamic Configuration
 
-All settings are defined in config/pipeline_config.yaml. You can modify:
+All settings are defined in config/config.yaml. You can modify:
 
 - Input/output paths
 - Spark job name
@@ -86,14 +86,11 @@ All settings are defined in config/pipeline_config.yaml. You can modify:
 
 ## Pipeline Outputs
 
-processed/enriched_data/    Cleaned data with derived total_price
 processed/category_stats/   Aggregated stats by category
-processed/column_profile/   Column-wise profiling
 quarantine/                 Invalid or rejected rows
 
 ## Assumptions & Decisions
 
-- requested_quantity × requested_unit_price is used to compute total_requested_price.
 - A row is "invalid" if any of id, name, or category is missing.
 - An explicit schema is used for robustness, not inferred.
 
