@@ -10,10 +10,10 @@ Build a robust pipeline that:
 
 - Ingests CSV files (easily extendable to JSON or Parquet)
 - Cleans and validates the data
-- Applies transformations and creates derived columns
-- Performs aggregations and profiling
+- Applies transformations
+- Performs aggregations
 - Stores processed data in optimized Parquet format
-- Is fully configurable via YAML
+- Is configurable via YAML
 - Handles invalid rows by sending them to a quarantine folder
 
 ```bash
@@ -54,7 +54,7 @@ pip install -r requirements.txt
 
 ## How to Run the Pipeline
 
-python jobs/run_pipeline.py
+python jobs/main.py
 
 This will execute all stages of the pipeline:
 
@@ -62,7 +62,7 @@ This will execute all stages of the pipeline:
 
 2. Cleans and validates data (invalid rows → data/quarantine/)
 
-3. Applies transformations and creates derived columns
+3. Applies transformations
 
 4. Aggregates:
 
@@ -86,8 +86,9 @@ All settings are defined in config/config.yaml. You can modify:
 
 ## Pipeline Outputs
 
-processed/category_stats/   Aggregated stats by category
-quarantine/                 Invalid or rejected rows
+data/raw/               Clean data
+data/processed/stats/   Aggregated stats
+data/quarantine/        Invalid or rejected rows
 
 ## Assumptions & Decisions
 
