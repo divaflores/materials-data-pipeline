@@ -1,6 +1,6 @@
 # Materials Data Engineering Pipeline
 
-This project implements a data engineering pipeline in PySpark to clean, transform, and analyze a CSV file containing material records. It's designed to be scalable, modular, and easily configurable for local or distributed execution (e.g., Azure Databricks).
+This project implements a data engineering pipeline in PySpark to clean, transform, and analyze a CSV file containing material records. It's designed to be scalable, modular, and easily configurable for local or distributed execution.
 
 ---
 
